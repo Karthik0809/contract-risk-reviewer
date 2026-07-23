@@ -165,3 +165,6 @@ secrets.json
 *.bin
 *.safetensors
 *.ckpt
+
+# CUAD eval cache (downloaded on demand, not redistributed)
+eval/.cuad_cache/
