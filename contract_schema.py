@@ -77,6 +77,7 @@ class RiskReport(BaseModel):
     findings: List[RiskFinding] = Field(default_factory=list)
     clause_count: int = Field(0, description="Number of clauses analyzed.")
     engine: str = Field("rule", description="'llm+rule' or 'rule' — which pipeline produced the report.")
+    llm_error: Optional[str] = Field(None, description="If the LLM pass failed, the reason (for diagnostics).")
 
     def high_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == Severity.HIGH)

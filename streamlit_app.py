@@ -223,11 +223,15 @@ def main() -> None:
     report = st.session_state["analysis_report"]
 
     if engine_active and report.engine == "rule":
-        st.warning(
+        msg = (
             "Gemini was connected but its analysis returned no usable output this run "
-            "— showing rule-engine results. This usually means an API quota/rate limit "
-            "or a model-access issue. Try again in a moment."
+            "— showing rule-engine results."
         )
+        if report.llm_error:
+            msg += f"\n\n**Reason:** `{report.llm_error}`"
+        else:
+            msg += " This usually means an API quota/rate limit or a model-access issue."
+        st.warning(msg)
 
     render_report(report)
 

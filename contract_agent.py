@@ -149,21 +149,23 @@ def _extract_json(raw: str) -> Optional[dict]:
         return None
 
 
-def llm_extract(text: str, generator) -> Optional[LLMExtraction]:
+def llm_extract(text: str, generator) -> tuple[Optional[LLMExtraction], Optional[str]]:
     """Run Gemini structured extraction. `generator` is a configured GeminiGenerator.
 
-    Returns None if the LLM is unavailable or the output can't be validated.
+    Returns (extraction, error). `extraction` is None if the LLM is unavailable or
+    the call failed; `error` carries a short reason for the UI when it did fail.
     """
     if generator is None or not getattr(generator, "api_key_set", False) or not getattr(generator, "model", None):
-        return None
+        return None, None
     # Keep the prompt within a safe size; contracts are chunked upstream if huge.
     body = text[:18000]
     prompt = f"{_LLM_SYSTEM}\n\n---- CONTRACT START ----\n{body}\n---- CONTRACT END ----\n\nJSON:"
     try:
         resp = generator.model.generate_content(prompt)
-        data = _extract_json(getattr(resp, "text", "") or "")
+        raw = getattr(resp, "text", "") or ""
+        data = _extract_json(raw)
         if data is None:
-            return None
+            return None, "Gemini returned a response that wasn't valid JSON."
         # Validate findings item-by-item and normalize common LLM quirks (lowercase
         # severity, missing optional fields) so one malformed item doesn't discard
         # the whole extraction.
@@ -185,10 +187,10 @@ def llm_extract(text: str, generator) -> Optional[LLMExtraction]:
                 valid.append(RiskFinding.model_validate(f))
             except Exception:  # noqa: BLE001 - skip a single bad item, keep the rest
                 continue
-        return LLMExtraction(findings=valid, summary=(data.get("summary") or "").strip())
+        return LLMExtraction(findings=valid, summary=(data.get("summary") or "").strip()), None
     except Exception as e:  # noqa: BLE001 - LLM failures must never crash the report
         print(f"[contract_agent] LLM extraction failed, using rules only: {e}")
-        return None
+        return None, f"{type(e).__name__}: {str(e)[:300]}"
 
 
 # --------------------------------------------------------------------------- #
@@ -239,6 +241,7 @@ class AgentState(TypedDict, total=False):
     rule_findings: List[RiskFinding]
     llm_findings: List[RiskFinding]
     llm_summary: str
+    llm_error: Optional[str]
     report: RiskReport
 
 
@@ -256,13 +259,14 @@ def _node_rules(state: AgentState) -> AgentState:
 
 
 def _node_llm(state: AgentState) -> AgentState:
-    extraction = llm_extract(state.get("text", ""), state.get("generator"))
+    extraction, error = llm_extract(state.get("text", ""), state.get("generator"))
     if extraction:
         state["llm_findings"] = extraction.findings
         state["llm_summary"] = extraction.summary
     else:
         state["llm_findings"] = []
         state["llm_summary"] = ""
+    state["llm_error"] = error
     return state
 
 
@@ -287,6 +291,7 @@ def _node_report(state: AgentState) -> AgentState:
         engine="llm+rule" if used_llm else "rule",
     )
     report.overall_risk = report.rollup_overall()
+    report.llm_error = state.get("llm_error")
     state["report"] = report
     return state
 
