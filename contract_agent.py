@@ -132,6 +132,47 @@ _LLM_SYSTEM = (
 )
 
 
+_QUOTA_HINTS = ("429", "quota", "resourceexhausted", "resource has been exhausted", "rate limit")
+
+
+def _is_quota_error(e: Exception) -> bool:
+    s = f"{type(e).__name__} {e}".lower()
+    return any(h in s for h in _QUOTA_HINTS)
+
+
+def _is_model_error(e: Exception) -> bool:
+    s = str(e).lower()
+    return "404" in s or "not found" in s
+
+
+def _generate_text(generator, prompt: str) -> str:
+    """Call Gemini, falling back to an alternate model on quota/model errors.
+
+    Free-tier quota is metered per model, so a 429 on one flash model can often
+    still succeed on another. We try at most two alternates to avoid burning quota.
+    """
+    try:
+        resp = generator.model.generate_content(prompt)
+        return getattr(resp, "text", "") or ""
+    except Exception as first:  # noqa: BLE001
+        if not (_is_quota_error(first) or _is_model_error(first)):
+            raise
+        try:
+            available = generator._list_generate_models()
+        except Exception:  # noqa: BLE001
+            available = []
+        current = getattr(generator, "model_name", "")
+        alternates = [m for m in available if m != current and "flash" in m][:2]
+        for alt in alternates:
+            try:
+                if generator._rebind_model(alt):
+                    resp = generator.model.generate_content(prompt)
+                    return getattr(resp, "text", "") or ""
+            except Exception:  # noqa: BLE001
+                continue
+        raise first
+
+
 def _extract_json(raw: str) -> Optional[dict]:
     if not raw:
         return None
@@ -161,8 +202,7 @@ def llm_extract(text: str, generator) -> tuple[Optional[LLMExtraction], Optional
     body = text[:18000]
     prompt = f"{_LLM_SYSTEM}\n\n---- CONTRACT START ----\n{body}\n---- CONTRACT END ----\n\nJSON:"
     try:
-        resp = generator.model.generate_content(prompt)
-        raw = getattr(resp, "text", "") or ""
+        raw = _generate_text(generator, prompt)
         data = _extract_json(raw)
         if data is None:
             return None, "Gemini returned a response that wasn't valid JSON."
@@ -190,6 +230,13 @@ def llm_extract(text: str, generator) -> tuple[Optional[LLMExtraction], Optional
         return LLMExtraction(findings=valid, summary=(data.get("summary") or "").strip()), None
     except Exception as e:  # noqa: BLE001 - LLM failures must never crash the report
         print(f"[contract_agent] LLM extraction failed, using rules only: {e}")
+        if _is_quota_error(e):
+            return None, (
+                "QUOTA: Gemini API quota exceeded — the LLM pass was skipped. "
+                "Free-tier limits reset periodically (per-minute and per-day); "
+                "try again later or enable billing. The rule-engine results below "
+                "are complete and unaffected."
+            )
         return None, f"{type(e).__name__}: {str(e)[:300]}"
 
 

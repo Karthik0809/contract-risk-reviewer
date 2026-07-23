@@ -223,15 +223,22 @@ def main() -> None:
     report = st.session_state["analysis_report"]
 
     if engine_active and report.engine == "rule":
-        msg = (
-            "Gemini was connected but its analysis returned no usable output this run "
-            "— showing rule-engine results."
-        )
-        if report.llm_error:
-            msg += f"\n\n**Reason:** `{report.llm_error}`"
+        err = report.llm_error or ""
+        if err.startswith("QUOTA:"):
+            # Expected, benign condition — not a failure of the reviewer.
+            st.info(
+                "⏳ **Gemini quota reached**, so the LLM pass was skipped this run. "
+                "Free-tier limits reset periodically — try again later, or enable billing "
+                "on your Google AI Studio key. **The rule-engine report below is complete.**"
+            )
         else:
-            msg += " This usually means an API quota/rate limit or a model-access issue."
-        st.warning(msg)
+            msg = (
+                "Gemini was connected but its analysis returned no usable output this run "
+                "— showing rule-engine results."
+            )
+            msg += f"\n\n**Reason:** `{err}`" if err else \
+                " This usually means an API quota/rate limit or a model-access issue."
+            st.warning(msg)
 
     render_report(report)
 
