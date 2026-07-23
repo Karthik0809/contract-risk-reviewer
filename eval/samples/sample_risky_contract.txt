@@ -1,0 +1,33 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement ("Agreement") is entered into between Acme Corp ("Client") and the Contractor.
+
+1. TERM AND RENEWAL
+The initial term of this Agreement is twelve (12) months. This Agreement shall automatically renew for successive twelve (12) month periods unless either party provides written notice of non-renewal at least ninety (90) days prior to the end of the then-current term.
+
+2. FEES AND PAYMENT
+Client shall pay all undisputed invoices within sixty (60) days of receipt. Client reserves the right to change the fees and rates upon notice to the Contractor.
+
+3. INTELLECTUAL PROPERTY
+All work product, deliverables, and any intellectual property created under this Agreement shall be owned by the Client as a work made for hire. Contractor hereby assigns all right, title, and interest in such work product to the Client.
+
+4. LIMITATION OF LIABILITY
+Contractor shall be liable for all damages arising out of or relating to this Agreement. The Contractor's liability under this Agreement is unlimited.
+
+5. INDEMNIFICATION
+Contractor shall defend, indemnify, and hold harmless the Client from and against any and all claims, losses, damages, and expenses, including reasonable attorneys' fees.
+
+6. NON-COMPETE
+During the term and for a period of two (2) years thereafter, Contractor shall not directly or indirectly engage in or provide services to any competitor of the Client.
+
+7. TERMINATION
+Client may terminate this Agreement at any time for convenience without cause upon written notice. Contractor may terminate only for the Client's uncured material breach.
+
+8. CONFIDENTIALITY
+The confidentiality obligations set forth herein shall survive indefinitely and remain in perpetuity.
+
+9. WARRANTIES
+The services are provided "as-is" without warranty of any kind. Client disclaims all warranties, express or implied.
+
+10. GOVERNING LAW
+This Agreement shall be governed by the laws of the State of Delaware. The parties consent to the exclusive jurisdiction of the courts located in Delaware.

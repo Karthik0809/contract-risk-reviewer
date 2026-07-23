@@ -1,0 +1,59 @@
+# Core dependencies
+# Contract Risk Reviewer front end
+streamlit>=1.36.0
+# Structured extraction / typed risk report
+pydantic>=2.5.0
+# Gradio 6.x supports Starlette 1.x (fixes HF Spaces Jinja2 TemplateResponse crash with Gradio 4.44 + Starlette 1.0).
+gradio==6.11.0
+gradio_client==2.4.0
+huggingface_hub>=0.33.5,<2.0
+torch>=2.0.0
+transformers>=4.30.0
+sentence-transformers>=2.2.0
+accelerate>=0.20.0
+
+# PDF processing
+pypdf>=3.15.0
+pdf2image>=1.16.0
+pytesseract>=0.3.10
+Pillow>=9.5.0
+
+# NLP and text processing
+nltk>=3.8.1
+rank-bm25>=0.2.2
+scikit-learn>=1.3.0
+faiss-cpu>=1.7.4
+
+# Vector database
+pinecone>=5.0.0
+
+# Optional: OpenAI embeddings for 1024-dim Pinecone index (e.g. text-embedding-3-large)
+# pip install openai
+openai>=1.0.0
+
+# Google AI and LLM
+google-generativeai>=0.3.0
+langchain>=0.2.0
+langchain-core>=0.2.0
+langgraph>=0.2.0
+llama-index>=0.9.0
+llama-index-llms-gemini>=0.1.0
+
+# Speech and language processing
+SpeechRecognition>=3.10.0
+pyttsx3>=2.90
+deep-translator>=1.11.0
+langdetect>=1.0.9
+
+# Export functionality
+reportlab>=4.0.0
+python-docx>=0.8.11
+
+# Utilities
+numpy>=1.24.0
+pandas>=2.0.0
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Optional: For public deployment
+pyngrok>=6.0.0

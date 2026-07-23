@@ -1,0 +1,85 @@
+{
+  "description": "Labeled evaluation set for the Contract Risk Reviewer. Each item is a contract snippet with the set of risk categories a reviewer should flag (ground truth). Used by run_eval.py to measure per-category detection rate (recall) and false-positive rate on clean clauses.",
+  "categories": [
+    "Auto-renewal", "Unlimited liability", "Indemnification", "Unilateral termination",
+    "IP assignment", "Non-compete", "Payment terms", "Governing law / venue",
+    "Confidentiality", "Warranty disclaimer"
+  ],
+  "contracts": [
+    {
+      "id": "msa_risky_01",
+      "text": "This Agreement shall automatically renew for successive one-year periods unless either party gives written notice at least 90 days before expiration.",
+      "expected": ["Auto-renewal"]
+    },
+    {
+      "id": "liab_01",
+      "text": "The Contractor's liability under this Agreement is unlimited and the Contractor shall be liable for all damages, whether direct or indirect.",
+      "expected": ["Unlimited liability"]
+    },
+    {
+      "id": "indemnity_01",
+      "text": "Vendor shall defend, indemnify, and hold harmless the Company from any and all third-party claims arising from the services.",
+      "expected": ["Indemnification"]
+    },
+    {
+      "id": "termination_01",
+      "text": "The Company may terminate this Agreement at any time for convenience without cause upon thirty days written notice.",
+      "expected": ["Unilateral termination"]
+    },
+    {
+      "id": "ip_01",
+      "text": "All work product created hereunder is a work made for hire and Contractor hereby assigns all right, title and interest in it to the Client.",
+      "expected": ["IP assignment"]
+    },
+    {
+      "id": "noncompete_01",
+      "text": "For two years following termination, Consultant shall not directly or indirectly engage in any business that competes with the Client.",
+      "expected": ["Non-compete"]
+    },
+    {
+      "id": "payment_01",
+      "text": "Client shall pay all undisputed invoices within sixty (60) days. Client reserves the right to change the rates upon notice.",
+      "expected": ["Payment terms"]
+    },
+    {
+      "id": "venue_01",
+      "text": "This Agreement shall be governed by the laws of the State of New York and the parties submit to the exclusive jurisdiction of its courts.",
+      "expected": ["Governing law / venue"]
+    },
+    {
+      "id": "confidentiality_01",
+      "text": "The receiving party's confidentiality obligations shall survive indefinitely and remain in perpetuity.",
+      "expected": ["Confidentiality"]
+    },
+    {
+      "id": "warranty_01",
+      "text": "The software is provided as-is, without warranty of any kind, and the vendor disclaims all warranties, express or implied.",
+      "expected": ["Warranty disclaimer"]
+    },
+    {
+      "id": "combo_01",
+      "text": "This Agreement automatically renews for additional one-year terms. Contractor shall indemnify and hold harmless the Client. Contractor's liability is unlimited. The Client may terminate for convenience at any time.",
+      "expected": ["Auto-renewal", "Indemnification", "Unlimited liability", "Unilateral termination"]
+    },
+    {
+      "id": "combo_02",
+      "text": "All intellectual property shall be assigned to the Company as a work for hire. Consultant shall not compete with the Company for a period of three years. Payment terms are net 90.",
+      "expected": ["IP assignment", "Non-compete", "Payment terms"]
+    },
+    {
+      "id": "clean_01",
+      "text": "The parties shall cooperate in good faith. This Agreement may be amended only by a written instrument signed by both parties. Notices shall be sent to the addresses set forth above.",
+      "expected": []
+    },
+    {
+      "id": "clean_02",
+      "text": "Each party shall bear its own costs. The services will be performed in a professional and workmanlike manner consistent with industry standards.",
+      "expected": []
+    },
+    {
+      "id": "clean_03",
+      "text": "This Agreement constitutes the entire understanding between the parties and supersedes all prior discussions. Headings are for convenience only.",
+      "expected": []
+    }
+  ]
+}
