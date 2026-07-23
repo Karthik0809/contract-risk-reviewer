@@ -162,13 +162,30 @@ def llm_extract(text: str, generator) -> Optional[LLMExtraction]:
     try:
         resp = generator.model.generate_content(prompt)
         data = _extract_json(getattr(resp, "text", "") or "")
-        if not data:
+        if data is None:
             return None
-        for f in data.get("findings", []):
-            f.setdefault("source", "llm")
-            if f.get("clause_ref") in ("", "null", None):
-                f["clause_ref"] = None
-        return LLMExtraction.model_validate(data)
+        # Validate findings item-by-item and normalize common LLM quirks (lowercase
+        # severity, missing optional fields) so one malformed item doesn't discard
+        # the whole extraction.
+        valid: List[RiskFinding] = []
+        for f in (data.get("findings") or []):
+            try:
+                f = dict(f)
+                f["source"] = "llm"
+                sev = str(f.get("severity", "")).strip().lower()
+                f["severity"] = {"high": "High", "medium": "Medium",
+                                 "low": "Low", "info": "Info"}.get(sev, "Medium")
+                if not (f.get("quote") or "").strip():
+                    continue  # a finding without a citation isn't usable
+                f.setdefault("category", "Other")
+                f.setdefault("title", f.get("category", "Issue"))
+                f.setdefault("rationale", "")
+                if f.get("clause_ref") in ("", "null", None):
+                    f["clause_ref"] = None
+                valid.append(RiskFinding.model_validate(f))
+            except Exception:  # noqa: BLE001 - skip a single bad item, keep the rest
+                continue
+        return LLMExtraction(findings=valid, summary=(data.get("summary") or "").strip())
     except Exception as e:  # noqa: BLE001 - LLM failures must never crash the report
         print(f"[contract_agent] LLM extraction failed, using rules only: {e}")
         return None

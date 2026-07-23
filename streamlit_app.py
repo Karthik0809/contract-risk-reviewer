@@ -100,6 +100,18 @@ def render_report(report: RiskReport) -> None:
     c2.metric("High severity", report.high_count())
     c3.metric("Medium severity", report.medium_count())
 
+    # Make the LLM pass's contribution explicit vs. the rule engine.
+    if report.engine.startswith("llm"):
+        llm_added = sum(1 for f in report.findings if f.source == "llm")
+        if llm_added:
+            st.info(f"🧠 LLM pass added **{llm_added}** finding(s) the rule engine missed.")
+        else:
+            st.info(
+                "🧠 LLM pass active — it reviewed the contract and surfaced no clauses "
+                "beyond the rule engine. On clear-cut contracts the LLM often just confirms "
+                "the rules; its value shows on messier, non-standard wording."
+            )
+
     st.markdown("#### Executive summary")
     st.write(report.summary)
 
@@ -210,39 +222,45 @@ def main() -> None:
         st.session_state["analysis_report"] = report
     report = st.session_state["analysis_report"]
 
-    if True:
-        render_report(report)
+    if engine_active and report.engine == "rule":
+        st.warning(
+            "Gemini was connected but its analysis returned no usable output this run "
+            "— showing rule-engine results. This usually means an API quota/rate limit "
+            "or a model-access issue. Try again in a moment."
+        )
 
-        st.markdown("#### Export report")
-        stem = os.path.splitext(name)[0]
-        col_pdf, col_docx, col_json = st.columns(3)
-        with col_pdf:
-            try:
-                from report_export import report_to_pdf
-                st.download_button(
-                    "⬇ PDF", data=report_to_pdf(report),
-                    file_name=f"{stem}_risk_report.pdf", mime="application/pdf",
-                    use_container_width=True,
-                )
-            except Exception as e:  # noqa: BLE001
-                st.caption(f"PDF unavailable: {e}")
-        with col_docx:
-            try:
-                from report_export import report_to_docx
-                st.download_button(
-                    "⬇ Word (DOCX)", data=report_to_docx(report),
-                    file_name=f"{stem}_risk_report.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    use_container_width=True,
-                )
-            except Exception as e:  # noqa: BLE001
-                st.caption(f"DOCX unavailable: {e}")
-        with col_json:
+    render_report(report)
+
+    st.markdown("#### Export report")
+    stem = os.path.splitext(name)[0]
+    col_pdf, col_docx, col_json = st.columns(3)
+    with col_pdf:
+        try:
+            from report_export import report_to_pdf
             st.download_button(
-                "⬇ JSON", data=report.model_dump_json(indent=2),
-                file_name=f"{stem}_risk_report.json", mime="application/json",
+                "⬇ PDF", data=report_to_pdf(report),
+                file_name=f"{stem}_risk_report.pdf", mime="application/pdf",
                 use_container_width=True,
             )
+        except Exception as e:  # noqa: BLE001
+            st.caption(f"PDF unavailable: {e}")
+    with col_docx:
+        try:
+            from report_export import report_to_docx
+            st.download_button(
+                "⬇ Word (DOCX)", data=report_to_docx(report),
+                file_name=f"{stem}_risk_report.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+            )
+        except Exception as e:  # noqa: BLE001
+            st.caption(f"DOCX unavailable: {e}")
+    with col_json:
+        st.download_button(
+            "⬇ JSON", data=report.model_dump_json(indent=2),
+            file_name=f"{stem}_risk_report.json", mime="application/json",
+            use_container_width=True,
+        )
 
 
 if __name__ == "__main__":
