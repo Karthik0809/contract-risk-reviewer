@@ -32,7 +32,14 @@ except ImportError:
     LANG_DETECT_AVAILABLE = False
     print("Language detection not available. Install: pip install langdetect")
 
-from utils import ends_sentence
+def ends_sentence(text: str) -> bool:
+    """Whether text ends with sentence-final punctuation.
+
+    Inlined (previously imported from utils) so the Contract Risk Reviewer app
+    doesn't pull in the heavy NLP stack (numpy/scikit-learn/nltk) at import time.
+    """
+    s = (text or "").strip()
+    return bool(s) and s[-1] in ".?!"
 
 class GeminiGenerator:
     def __init__(self):

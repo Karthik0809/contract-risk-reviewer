@@ -129,11 +129,14 @@ python -m pytest test_contract_reviewer.py -q
 
 ## Ask-anything retrieval (bonus)
 
-The bundled hybrid retrieval stack (FAISS + BM25 + TF-IDF + reranking) can also answer free-form questions about a contract (*"what's the notice period?"*) via the optional Gradio interface:
+The bundled hybrid retrieval stack (FAISS + BM25 + TF-IDF + reranking) can also answer free-form questions about a contract (*"what's the notice period?"*) via the optional Gradio interface. This needs the **full** dependency set (torch, transformers, faiss, gradio, …), kept separate so the reviewer app stays lightweight:
 
 ```bash
+pip install -r requirements-full.txt
 python run.py
 ```
+
+> The deployed Streamlit app installs only `requirements.txt` — a slim set (streamlit, pydantic, langgraph, pypdf, reportlab, python-docx, google-generativeai) so it builds fast and reliably on Streamlit Cloud / HF Spaces.
 
 ## License
 
