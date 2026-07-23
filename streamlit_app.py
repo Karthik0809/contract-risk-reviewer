@@ -102,20 +102,33 @@ def render_report(report: RiskReport) -> None:
         return
 
     for i, f in enumerate(report.sorted_findings(), start=1):
-        header = f"{_badge(f.severity)} &nbsp; **{f.category}** — {f.title}"
-        with st.expander(f"{i}. [{f.severity.value}] {f.category} — {f.title}", expanded=(f.severity == Severity.HIGH)):
-            st.markdown(header, unsafe_allow_html=True)
+        loc = f.locator()
+        loc_label = f"  ·  {loc}" if loc else ""
+        with st.expander(
+            f"{i}. [{f.severity.value}] {f.category} — {f.title}{loc_label}",
+            expanded=(f.severity == Severity.HIGH),
+        ):
+            st.markdown(f"{_badge(f.severity)} &nbsp; **{f.category}** — {f.title}", unsafe_allow_html=True)
             st.markdown(f"**Why it's risky:** {f.rationale}")
-            if f.recommendation:
-                st.markdown(f"**Recommended action:** {f.recommendation}")
-            if f.clause_ref:
-                st.caption(f"Clause reference: {f.clause_ref}")
-            st.markdown("**Cited text:**")
-            st.markdown(
-                f"<blockquote style='border-left:3px solid {SEVERITY_COLORS.get(f.severity)};"
-                f"padding-left:12px;color:#444;font-style:italic'>{f.quote}</blockquote>",
-                unsafe_allow_html=True,
-            )
+            if loc:
+                st.caption(f"📍 Location: {loc}")
+
+            # Redline view: current clause vs suggested change, side by side.
+            left, right = st.columns(2)
+            with left:
+                st.markdown("**Current clause (as written)**")
+                st.markdown(
+                    f"<blockquote style='border-left:3px solid {SEVERITY_COLORS.get(f.severity)};"
+                    f"padding-left:12px;color:#c0392b;font-style:italic'>{f.quote}</blockquote>",
+                    unsafe_allow_html=True,
+                )
+            with right:
+                st.markdown("**Suggested change (redline)**")
+                st.markdown(
+                    f"<blockquote style='border-left:3px solid #2e8b57;"
+                    f"padding-left:12px;color:#1e7d4f'>{f.recommendation or 'Review with counsel.'}</blockquote>",
+                    unsafe_allow_html=True,
+                )
             st.caption(f"Source: {f.source}")
 
 
@@ -167,12 +180,36 @@ def main() -> None:
             report = review_contract(text, contract_name=name, generator=generator)
         render_report(report)
 
-        st.download_button(
-            "Download report (JSON)",
-            data=report.model_dump_json(indent=2),
-            file_name=f"{os.path.splitext(name)[0]}_risk_report.json",
-            mime="application/json",
-        )
+        st.markdown("#### Export report")
+        stem = os.path.splitext(name)[0]
+        col_pdf, col_docx, col_json = st.columns(3)
+        with col_pdf:
+            try:
+                from report_export import report_to_pdf
+                st.download_button(
+                    "⬇ PDF", data=report_to_pdf(report),
+                    file_name=f"{stem}_risk_report.pdf", mime="application/pdf",
+                    use_container_width=True,
+                )
+            except Exception as e:  # noqa: BLE001
+                st.caption(f"PDF unavailable: {e}")
+        with col_docx:
+            try:
+                from report_export import report_to_docx
+                st.download_button(
+                    "⬇ Word (DOCX)", data=report_to_docx(report),
+                    file_name=f"{stem}_risk_report.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True,
+                )
+            except Exception as e:  # noqa: BLE001
+                st.caption(f"DOCX unavailable: {e}")
+        with col_json:
+            st.download_button(
+                "⬇ JSON", data=report.model_dump_json(indent=2),
+                file_name=f"{stem}_risk_report.json", mime="application/json",
+                use_container_width=True,
+            )
 
 
 if __name__ == "__main__":

@@ -54,7 +54,7 @@ _RULES: List[RiskRule] = [
         rationale="The contract renews itself unless you cancel within a narrow window, which can lock you in for another full term.",
         recommendation="Add an explicit non-renewal right and shorten the notice window, or convert to month-to-month after the initial term.",
         patterns=[
-            r"automatically\s+renew\w*",
+            r"(?<!not )automatically\s+renew\w*",
             r"auto[-\s]?renew\w*",
             r"evergreen",
             r"renew(?:s|ed|al)?\s+for\s+(?:successive|additional|further)\s+(?:period|term)",
@@ -71,7 +71,7 @@ _RULES: List[RiskRule] = [
             r"unlimited\s+liab\w*",
             r"liab\w*\s+(?:is|shall\s+be|will\s+be)\s+unlimited",
             r"without\s+(?:any\s+)?limit\w*\s+(?:of|on|to)\s+liab\w*",
-            r"no\s+(?:cap|limitation)\s+on\s+(?:its\s+)?liab\w*",
+            r"no\s+(?:cap|limit\w*)\s+on\s+[\w'’\s]{0,25}?liab\w*",
             r"liable\s+for\s+all\s+(?:damages|losses)",
         ],
     ),
@@ -95,8 +95,8 @@ _RULES: List[RiskRule] = [
         recommendation="Make termination-for-convenience mutual with equal notice, and require payment for work completed.",
         patterns=[
             r"terminate\s+(?:this\s+agreement\s+)?(?:at\s+any\s+time|for\s+convenience|without\s+cause)",
-            r"(?:sole|its)\s+discretion\s+to\s+terminate",
-            r"terminate\s+immediately\s+without\s+notice",
+            r"(?:sole|its)\s+discretion[\w\s,]{0,25}?terminate",
+            r"terminate\s+(?:this\s+agreement\s+)?immediately\s+without\s+notice",
         ],
     ),
     RiskRule(
@@ -108,7 +108,7 @@ _RULES: List[RiskRule] = [
         patterns=[
             r"assign\w*\s+all\s+(?:right|title|interest)",
             r"work\s+(?:made\s+)?for\s+hire",
-            r"all\s+intellectual\s+property\s+(?:shall\s+)?(?:be\s+)?(?:owned|assigned|vest)",
+            r"all\s+intellectual\s+property\b[\w\s,]{0,45}?(?:owned|assigned|assign\w*|vest)",
         ],
     ),
     RiskRule(
@@ -139,12 +139,15 @@ _RULES: List[RiskRule] = [
         category="Governing law / venue",
         severity=Severity.LOW,
         title="Distant governing law or exclusive venue",
-        rationale="Disputes must be litigated in a jurisdiction that may be inconvenient or costly for you.",
+        rationale="Disputes must be litigated in a specific jurisdiction that may be inconvenient or costly for you.",
         recommendation="Negotiate a neutral or local governing law and venue, or agree to arbitration.",
         patterns=[
-            r"governed\s+by\s+the\s+laws\s+of",
+            # A plain governing-law clause is standard and not flagged; only an
+            # *exclusive* venue/jurisdiction (which forecloses your options) is.
             r"exclusive\s+jurisdiction",
-            r"venue\s+(?:shall|will)\s+(?:be|lie)",
+            r"exclusive\s+venue",
+            r"venue\s+(?:shall|will)\s+(?:be|lie)\s+(?:exclusively\s+)?in",
+            r"submit\s+to\s+the\s+exclusive\s+jurisdiction",
         ],
     ),
     RiskRule(
@@ -202,7 +205,7 @@ def _snippet(text: str, start: int, end: int, window: int = 200) -> str:
     return snippet
 
 
-def scan_text(text: str, clause_ref: str | None = None) -> List[RiskFinding]:
+def scan_text(text: str, clause_ref: str | None = None, page: int | None = None) -> List[RiskFinding]:
     """Run the full rule catalog over `text` and return findings.
 
     De-duplicates by (category, overlapping span) so the same clause matched by
@@ -225,6 +228,7 @@ def scan_text(text: str, clause_ref: str | None = None) -> List[RiskFinding]:
                     recommendation=rule.recommendation,
                     quote=_snippet(text, m.start(), m.end()),
                     clause_ref=clause_ref,
+                    page=page,
                     source="rule",
                 )
             )

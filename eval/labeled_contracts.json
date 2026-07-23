@@ -1,85 +1,74 @@
 {
-  "description": "Labeled evaluation set for the Contract Risk Reviewer. Each item is a contract snippet with the set of risk categories a reviewer should flag (ground truth). Used by run_eval.py to measure per-category detection rate (recall) and false-positive rate on clean clauses.",
+  "description": "Labeled evaluation set for the Contract Risk Reviewer. Each item is a contract snippet with the set of risk categories a reviewer should flag (ground truth). Includes positives (varied phrasing), HARD NEGATIVES (clauses that look risky lexically but are standard/benign and must NOT be flagged), and clean clauses. run_eval.py measures detection rate (recall), precision, per-category recall, and clean/hard-negative false-positive rate.",
   "categories": [
     "Auto-renewal", "Unlimited liability", "Indemnification", "Unilateral termination",
     "IP assignment", "Non-compete", "Payment terms", "Governing law / venue",
     "Confidentiality", "Warranty disclaimer"
   ],
   "contracts": [
-    {
-      "id": "msa_risky_01",
-      "text": "This Agreement shall automatically renew for successive one-year periods unless either party gives written notice at least 90 days before expiration.",
-      "expected": ["Auto-renewal"]
-    },
-    {
-      "id": "liab_01",
-      "text": "The Contractor's liability under this Agreement is unlimited and the Contractor shall be liable for all damages, whether direct or indirect.",
-      "expected": ["Unlimited liability"]
-    },
-    {
-      "id": "indemnity_01",
-      "text": "Vendor shall defend, indemnify, and hold harmless the Company from any and all third-party claims arising from the services.",
-      "expected": ["Indemnification"]
-    },
-    {
-      "id": "termination_01",
-      "text": "The Company may terminate this Agreement at any time for convenience without cause upon thirty days written notice.",
-      "expected": ["Unilateral termination"]
-    },
-    {
-      "id": "ip_01",
-      "text": "All work product created hereunder is a work made for hire and Contractor hereby assigns all right, title and interest in it to the Client.",
-      "expected": ["IP assignment"]
-    },
-    {
-      "id": "noncompete_01",
-      "text": "For two years following termination, Consultant shall not directly or indirectly engage in any business that competes with the Client.",
-      "expected": ["Non-compete"]
-    },
-    {
-      "id": "payment_01",
-      "text": "Client shall pay all undisputed invoices within sixty (60) days. Client reserves the right to change the rates upon notice.",
-      "expected": ["Payment terms"]
-    },
-    {
-      "id": "venue_01",
-      "text": "This Agreement shall be governed by the laws of the State of New York and the parties submit to the exclusive jurisdiction of its courts.",
-      "expected": ["Governing law / venue"]
-    },
-    {
-      "id": "confidentiality_01",
-      "text": "The receiving party's confidentiality obligations shall survive indefinitely and remain in perpetuity.",
-      "expected": ["Confidentiality"]
-    },
-    {
-      "id": "warranty_01",
-      "text": "The software is provided as-is, without warranty of any kind, and the vendor disclaims all warranties, express or implied.",
-      "expected": ["Warranty disclaimer"]
-    },
-    {
-      "id": "combo_01",
-      "text": "This Agreement automatically renews for additional one-year terms. Contractor shall indemnify and hold harmless the Client. Contractor's liability is unlimited. The Client may terminate for convenience at any time.",
-      "expected": ["Auto-renewal", "Indemnification", "Unlimited liability", "Unilateral termination"]
-    },
-    {
-      "id": "combo_02",
-      "text": "All intellectual property shall be assigned to the Company as a work for hire. Consultant shall not compete with the Company for a period of three years. Payment terms are net 90.",
-      "expected": ["IP assignment", "Non-compete", "Payment terms"]
-    },
-    {
-      "id": "clean_01",
-      "text": "The parties shall cooperate in good faith. This Agreement may be amended only by a written instrument signed by both parties. Notices shall be sent to the addresses set forth above.",
-      "expected": []
-    },
-    {
-      "id": "clean_02",
-      "text": "Each party shall bear its own costs. The services will be performed in a professional and workmanlike manner consistent with industry standards.",
-      "expected": []
-    },
-    {
-      "id": "clean_03",
-      "text": "This Agreement constitutes the entire understanding between the parties and supersedes all prior discussions. Headings are for convenience only.",
-      "expected": []
-    }
+    { "id": "autorenew_01", "text": "This Agreement shall automatically renew for successive one-year periods unless either party gives written notice at least 90 days before expiration.", "expected": ["Auto-renewal"] },
+    { "id": "autorenew_02", "text": "Upon expiry of the Initial Term, the subscription will auto-renew for additional twelve (12) month terms.", "expected": ["Auto-renewal"] },
+    { "id": "autorenew_03", "text": "The term of this Order is evergreen and continues until terminated in accordance with Section 9.", "expected": ["Auto-renewal"] },
+    { "id": "autorenew_04", "text": "This Agreement renews for successive additional periods unless the Client provides written notice of non-renewal.", "expected": ["Auto-renewal"] },
+    { "id": "autorenew_neg_01", "text": "This Agreement has a fixed term of twelve (12) months and will not automatically renew; it terminates at the end of the term.", "expected": [], "note": "hard negative: negated auto-renewal" },
+    { "id": "autorenew_neg_02", "text": "Renewal of this Agreement requires a new written order signed by both parties.", "expected": [], "note": "hard negative: manual renewal only" },
+
+    { "id": "liab_01", "text": "The Contractor's liability under this Agreement is unlimited and the Contractor shall be liable for all damages, whether direct or indirect.", "expected": ["Unlimited liability"] },
+    { "id": "liab_02", "text": "There shall be no cap on the Vendor's liability arising out of or relating to this Agreement.", "expected": ["Unlimited liability"] },
+    { "id": "liab_03", "text": "The Supplier shall be liable for all losses suffered by the Customer without any limitation of liability.", "expected": ["Unlimited liability"] },
+    { "id": "liab_neg_01", "text": "Each party's aggregate liability under this Agreement is capped at the total fees paid in the twelve (12) months preceding the claim.", "expected": [], "note": "hard negative: limited liability" },
+    { "id": "liab_neg_02", "text": "In no event shall either party be liable for indirect, incidental, or consequential damages.", "expected": [], "note": "hard negative: standard consequential-damages exclusion" },
+
+    { "id": "indem_01", "text": "Vendor shall defend, indemnify, and hold harmless the Company from any and all third-party claims arising from the services.", "expected": ["Indemnification"] },
+    { "id": "indem_02", "text": "The Contractor agrees to indemnify the Client against all losses, damages, and reasonable attorneys' fees.", "expected": ["Indemnification"] },
+    { "id": "indem_03", "text": "Supplier shall hold harmless the Buyer from any claims relating to product defects.", "expected": ["Indemnification"] },
+
+    { "id": "term_01", "text": "The Company may terminate this Agreement at any time for convenience without cause upon thirty days written notice.", "expected": ["Unilateral termination"] },
+    { "id": "term_02", "text": "Client, in its sole discretion, may terminate this Agreement immediately without notice.", "expected": ["Unilateral termination"] },
+    { "id": "term_03", "text": "The Company reserves the right to terminate for convenience at any time; the Contractor may terminate only for material breach.", "expected": ["Unilateral termination"] },
+    { "id": "term_neg_01", "text": "Either party may terminate this Agreement for the other party's uncured material breach upon thirty (30) days written notice.", "expected": [], "note": "hard negative: mutual for-cause termination" },
+    { "id": "term_neg_02", "text": "This Agreement terminates automatically upon completion of the services described in the Statement of Work.", "expected": [], "note": "hard negative: natural expiry" },
+
+    { "id": "ip_01", "text": "All work product created hereunder is a work made for hire and Contractor hereby assigns all right, title and interest in it to the Client.", "expected": ["IP assignment"] },
+    { "id": "ip_02", "text": "All intellectual property developed under this Agreement shall be owned by and assigned to the Company.", "expected": ["IP assignment"] },
+    { "id": "ip_neg_01", "text": "The Company grants the Contractor a non-exclusive, limited license to use the deliverables for internal purposes.", "expected": [], "note": "hard negative: license, not assignment" },
+    { "id": "ip_neg_02", "text": "Each party retains ownership of its own pre-existing intellectual property.", "expected": [], "note": "hard negative: IP retained" },
+
+    { "id": "noncompete_01", "text": "For two years following termination, Consultant shall not directly or indirectly engage in any business that competes with the Client.", "expected": ["Non-compete"] },
+    { "id": "noncompete_02", "text": "During the term, the Contractor agrees to an exclusive arrangement and shall not solicit the Client's customers.", "expected": ["Non-compete"] },
+    { "id": "noncompete_03", "text": "The Provider shall not compete, directly or indirectly, within the Territory for a period of eighteen months.", "expected": ["Non-compete"] },
+    { "id": "noncompete_neg_01", "text": "Nothing in this Agreement restricts the Contractor from providing similar services to other clients.", "expected": [], "note": "hard negative: no restriction" },
+
+    { "id": "payment_01", "text": "Client shall pay all undisputed invoices within sixty (60) days. Client reserves the right to change the rates upon notice.", "expected": ["Payment terms"] },
+    { "id": "payment_02", "text": "Payment terms are Net 90 from the date of invoice.", "expected": ["Payment terms"] },
+    { "id": "payment_03", "text": "The Company may adjust the fees at any time in its discretion upon notice to the Contractor.", "expected": ["Payment terms"] },
+    { "id": "payment_neg_01", "text": "Fees are due within thirty (30) days of invoice (Net 30). Late amounts accrue interest at 1.5% per month.", "expected": [], "note": "hard negative: standard Net 30" },
+    { "id": "payment_neg_02", "text": "The fees set forth in Exhibit A are fixed for the Initial Term and may not be changed without mutual written agreement.", "expected": [], "note": "hard negative: fixed fees" },
+
+    { "id": "venue_01", "text": "The parties submit to the exclusive jurisdiction of the courts located in Delaware for any dispute arising under this Agreement.", "expected": ["Governing law / venue"] },
+    { "id": "venue_02", "text": "Venue shall be exclusively in the state and federal courts sitting in New York County.", "expected": ["Governing law / venue"] },
+    { "id": "venue_neg_01", "text": "This Agreement shall be governed by and construed in accordance with the laws of the State of California.", "expected": [], "note": "hard negative: plain governing law, no exclusive venue" },
+    { "id": "venue_neg_02", "text": "Any dispute may be brought in any court of competent jurisdiction.", "expected": [], "note": "hard negative: non-exclusive venue" },
+
+    { "id": "conf_01", "text": "The receiving party's confidentiality obligations shall survive indefinitely and remain in perpetuity.", "expected": ["Confidentiality"] },
+    { "id": "conf_02", "text": "All Confidential Information shall be kept confidential in perpetuity following termination of this Agreement.", "expected": ["Confidentiality"] },
+    { "id": "conf_neg_01", "text": "Confidentiality obligations shall survive for a period of three (3) years after termination of this Agreement.", "expected": [], "note": "hard negative: time-bound confidentiality" },
+    { "id": "conf_neg_02", "text": "Each party shall protect the other's Confidential Information using the same care it uses for its own.", "expected": [], "note": "hard negative: standard mutual NDA" },
+
+    { "id": "warranty_01", "text": "The software is provided as-is, without warranty of any kind, and the vendor disclaims all warranties, express or implied.", "expected": ["Warranty disclaimer"] },
+    { "id": "warranty_02", "text": "THE SERVICES ARE PROVIDED \"AS IS\" AND THE COMPANY DISCLAIMS ALL WARRANTIES INCLUDING MERCHANTABILITY.", "expected": ["Warranty disclaimer"] },
+    { "id": "warranty_neg_01", "text": "The Provider warrants that the services will be performed in a professional and workmanlike manner for ninety (90) days.", "expected": [], "note": "hard negative: affirmative limited warranty" },
+
+    { "id": "combo_01", "text": "This Agreement automatically renews for additional one-year terms. Contractor shall indemnify and hold harmless the Client. Contractor's liability is unlimited. The Client may terminate for convenience at any time.", "expected": ["Auto-renewal", "Indemnification", "Unlimited liability", "Unilateral termination"] },
+    { "id": "combo_02", "text": "All intellectual property shall be assigned to the Company as a work for hire. Consultant shall not compete with the Company for a period of three years. Payment terms are net 90.", "expected": ["IP assignment", "Non-compete", "Payment terms"] },
+    { "id": "combo_03", "text": "The Vendor provides the platform as-is and disclaims all warranties. The parties submit to the exclusive jurisdiction of Texas courts. Confidentiality obligations survive in perpetuity.", "expected": ["Warranty disclaimer", "Governing law / venue", "Confidentiality"] },
+    { "id": "combo_04", "text": "The subscription will auto-renew annually. Either party may terminate for material breach on 30 days notice. Fees are Net 30.", "expected": ["Auto-renewal"], "note": "mixed: only auto-renewal should flag; termination is mutual, Net 30 is fine" },
+
+    { "id": "clean_01", "text": "The parties shall cooperate in good faith. This Agreement may be amended only by a written instrument signed by both parties. Notices shall be sent to the addresses set forth above.", "expected": [] },
+    { "id": "clean_02", "text": "Each party shall bear its own costs. The services will be performed in a professional and workmanlike manner consistent with industry standards.", "expected": [] },
+    { "id": "clean_03", "text": "This Agreement constitutes the entire understanding between the parties and supersedes all prior discussions. Headings are for convenience only.", "expected": [] },
+    { "id": "clean_04", "text": "If any provision of this Agreement is held unenforceable, the remaining provisions shall continue in full force and effect.", "expected": [] },
+    { "id": "clean_05", "text": "The Contractor shall deliver the milestones described in the Statement of Work by the dates set forth therein.", "expected": [] },
+    { "id": "clean_06", "text": "This Agreement may be executed in counterparts, each of which shall be deemed an original.", "expected": [] }
   ]
 }

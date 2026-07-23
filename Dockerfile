@@ -16,11 +16,13 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . /app
 
-# Cloud runtime port override; fallback for local container runs
+# Streamlit runtime config (Contract Risk Reviewer is the primary app).
 ENV PORT=7860
-ENV GRADIO_SERVER_NAME=0.0.0.0
-ENV GRADIO_SHARE=false
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+ENV STREAMLIT_SERVER_HEADLESS=true
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 EXPOSE 7860
 
-CMD ["python", "run.py"]
+# Bind to $PORT so the image works on Hugging Face Spaces, Cloud Run, etc.
+CMD ["sh", "-c", "streamlit run streamlit_app.py --server.port=${PORT:-7860} --server.address=0.0.0.0"]

@@ -43,9 +43,34 @@ _HEADING_RE = re.compile(
 )
 
 
+_PAGE_MARKER_RE = re.compile(r"---\s*Page\s+(\d+)\s*---")
+
+
+def _build_page_index(text: str) -> List[tuple[int, int]]:
+    """Return sorted (char_offset, page_number) breakpoints from '--- Page N ---' markers.
+
+    The DocuQuery PDF extractor inserts these markers; TXT inputs have none, in
+    which case this returns [] and page lookups yield None.
+    """
+    return [(m.start(), int(m.group(1))) for m in _PAGE_MARKER_RE.finditer(text)]
+
+
+def _page_for(offset: int, index: List[tuple[int, int]]) -> Optional[int]:
+    if not index:
+        return None
+    page = None
+    for pos, num in index:
+        if pos <= offset:
+            page = num
+        else:
+            break
+    return page
+
+
 def extract_clauses(text: str) -> List[Clause]:
     """Split a contract into clauses by detected headings; fall back to paragraphs."""
     text = text or ""
+    page_index = _build_page_index(text)
     heads = list(_HEADING_RE.finditer(text))
     clauses: List[Clause] = []
 
@@ -56,19 +81,26 @@ def extract_clauses(text: str) -> List[Clause]:
             body = text[start:end].strip()
             if len(body) < 15:
                 continue
-            heading = re.sub(r"\s+", " ", text[h.start():h.end()]).strip()
-            clauses.append(Clause(heading=heading[:120], text=body, start_char=start))
+            # Use the clause's first non-empty line as a readable heading label
+            # (e.g. "1. TERM AND RENEWAL"), skipping any "--- Page N ---" marker.
+            heading = ""
+            for line in body.splitlines():
+                line = line.strip()
+                if line and not _PAGE_MARKER_RE.fullmatch(line):
+                    heading = re.sub(r"\s+", " ", line)[:120]
+                    break
+            clauses.append(Clause(heading=heading, text=body, start_char=start, page=_page_for(start, page_index)))
     else:
         # No clear structure: chunk on blank lines / paragraph boundaries.
         offset = 0
         for para in re.split(r"\n\s*\n", text):
             body = para.strip()
             if len(body) >= 40:
-                clauses.append(Clause(heading="", text=body, start_char=offset))
+                clauses.append(Clause(heading="", text=body, start_char=offset, page=_page_for(offset, page_index)))
             offset += len(para) + 2
 
     if not clauses and text.strip():
-        clauses.append(Clause(heading="", text=text.strip(), start_char=0))
+        clauses.append(Clause(heading="", text=text.strip(), start_char=0, page=_page_for(0, page_index)))
     return clauses
 
 
@@ -201,7 +233,7 @@ def _node_extract(state: AgentState) -> AgentState:
 def _node_rules(state: AgentState) -> AgentState:
     findings: List[RiskFinding] = []
     for c in state.get("clauses", []):
-        findings.extend(scan_text(c.text, clause_ref=(c.heading or None)))
+        findings.extend(scan_text(c.text, clause_ref=(c.heading or None), page=c.page))
     state["rule_findings"] = findings
     return state
 
@@ -219,6 +251,14 @@ def _node_llm(state: AgentState) -> AgentState:
 
 def _node_report(state: AgentState) -> AgentState:
     name = state.get("contract_name", "contract")
+    text = state.get("text", "")
+    page_index = _build_page_index(text)
+    # Backfill page numbers for LLM findings by locating their verbatim quote.
+    for f in state.get("llm_findings", []):
+        if f.page is None and f.quote and page_index:
+            idx = text.find(f.quote[:60])
+            if idx != -1:
+                f.page = _page_for(idx, page_index)
     merged = merge_findings(state.get("rule_findings", []), state.get("llm_findings", []))
     used_llm = bool(state.get("llm_findings")) or bool(state.get("llm_summary"))
     summary = state.get("llm_summary") or _fallback_summary(name, merged)

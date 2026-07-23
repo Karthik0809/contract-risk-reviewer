@@ -48,3 +48,33 @@ def test_report_json_roundtrips():
     report = review_contract("Payment terms are net 90.", contract_name="x")
     payload = report.model_dump_json()
     assert "Payment terms" in payload
+
+
+def test_page_anchor_from_markers():
+    # DocuQuery-style page markers should populate the finding's page number.
+    text = (
+        "--- Page 1 ---\nGeneral provisions apply.\n\n"
+        "--- Page 2 ---\nThe Contractor's liability is unlimited.\n"
+    )
+    report = review_contract(text, contract_name="paged.pdf")
+    liab = [f for f in report.findings if f.category == "Unlimited liability"]
+    assert liab and liab[0].page == 2
+    assert "p. 2" in liab[0].locator()
+
+
+def test_negation_not_flagged():
+    # "will not automatically renew" must NOT trigger the auto-renewal rule.
+    report = review_contract("This Agreement will not automatically renew.", contract_name="x")
+    assert all(f.category != "Auto-renewal" for f in report.findings)
+
+
+def test_pdf_and_docx_export():
+    from report_export import report_to_docx, report_to_pdf
+    report = review_contract(
+        "Contractor's liability is unlimited and the Client may terminate for convenience.",
+        contract_name="export_test",
+    )
+    pdf = report_to_pdf(report)
+    docx = report_to_docx(report)
+    assert pdf[:4] == b"%PDF"
+    assert docx[:2] == b"PK"  # docx is a zip container

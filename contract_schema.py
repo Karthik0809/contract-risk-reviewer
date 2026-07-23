@@ -43,7 +43,17 @@ class RiskFinding(BaseModel):
     recommendation: str = Field("", description="Suggested redline / negotiation ask.")
     quote: str = Field(..., description="The exact contract text this finding is based on (verbatim citation).")
     clause_ref: Optional[str] = Field(None, description="Section/clause heading or number, if identifiable.")
+    page: Optional[int] = Field(None, description="Source page number, if known (from the PDF).")
     source: str = Field("rule", description="'llm' or 'rule' — how the finding was produced.")
+
+    def locator(self) -> str:
+        """Human-readable 'p. 4 · §7' style anchor for fast verification."""
+        parts = []
+        if self.page:
+            parts.append(f"p. {self.page}")
+        if self.clause_ref:
+            parts.append(self.clause_ref)
+        return " · ".join(parts)
 
     def severity_order(self) -> int:
         return self.severity.order
@@ -55,6 +65,7 @@ class Clause(BaseModel):
     heading: str = Field("", description="Detected heading or clause number.")
     text: str = Field(..., description="Full clause text.")
     start_char: int = Field(0, description="Character offset in the source document.")
+    page: Optional[int] = Field(None, description="Source page number, if known (from the PDF).")
 
 
 class RiskReport(BaseModel):
