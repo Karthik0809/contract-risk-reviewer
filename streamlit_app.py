@@ -10,6 +10,7 @@ Run locally:
 
 from __future__ import annotations
 
+import hashlib
 import os
 import tempfile
 
@@ -73,11 +74,17 @@ def _extract_text(uploaded) -> tuple[str, str]:
 
 @st.cache_resource(show_spinner=False)
 def _get_generator(api_key: str):
-    if not api_key or GeminiGenerator is None:
-        return None
+    """Return (generator_or_None, status). status ∈ {'none','unavailable','invalid','ok'}.
+
+    Cached per api_key so we authenticate once, not on every rerun.
+    """
+    if not api_key:
+        return None, "none"
+    if GeminiGenerator is None:
+        return None, "unavailable"
     gen = GeminiGenerator()
     ok = gen.configure(api_key)
-    return gen if ok else None
+    return (gen, "ok") if ok else (None, "invalid")
 
 
 def render_report(report: RiskReport) -> None:
@@ -152,6 +159,19 @@ def main() -> None:
             "- **With key:** LLM + rule engine (catches non-standard clauses too)\n"
             "- **Without key:** rule engine only (fully offline)"
         )
+        # Authenticate once and show the user exactly which engine is active.
+        generator, gstatus = _get_generator(api_key)
+        if gstatus == "ok":
+            st.success("✅ Gemini connected — LLM + rule engine active.")
+        elif gstatus == "invalid":
+            st.error(
+                "⚠️ Key not accepted. A Google AI Studio key starts with **`AIza…`** "
+                "(get one at aistudio.google.com/apikey). Running rule engine only."
+            )
+        elif gstatus == "unavailable":
+            st.warning("google-generativeai not installed — rule engine only.")
+        else:
+            st.info("No key set — running the offline rule engine.")
         st.divider()
         st.markdown("**Detected risk categories**")
         from risk_rules import CATEGORIES
@@ -174,10 +194,23 @@ def main() -> None:
         st.info("Upload a PDF/TXT contract or tick the sample checkbox to see a live report.")
         return
 
-    if st.button("Analyze contract", type="primary") or demo or uploaded:
-        with st.spinner("Analyzing contract…"):
-            generator = _get_generator(api_key)
+    # Only (re)analyze when the contract or the active engine changes — otherwise
+    # every rerun (expanding a clause, clicking a download) would re-call Gemini
+    # and make the app feel slow.
+    engine_active = generator is not None
+    sig = hashlib.sha1(f"{engine_active}|{name}|{text}".encode("utf-8")).hexdigest()
+    if st.session_state.get("analysis_sig") != sig:
+        spinner_msg = (
+            "Analyzing with Gemini + rules… (runs once, then cached)"
+            if engine_active else "Analyzing contract…"
+        )
+        with st.spinner(spinner_msg):
             report = review_contract(text, contract_name=name, generator=generator)
+        st.session_state["analysis_sig"] = sig
+        st.session_state["analysis_report"] = report
+    report = st.session_state["analysis_report"]
+
+    if True:
         render_report(report)
 
         st.markdown("#### Export report")

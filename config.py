@@ -3,7 +3,7 @@
 import os
 
 # --------------------------- Configuration ---------------------------
-DEFAULT_GEMINI_MODEL = os.environ.get("DEFAULT_GEMINI_MODEL", "gemini-1.5-flash")
+DEFAULT_GEMINI_MODEL = os.environ.get("DEFAULT_GEMINI_MODEL", "gemini-2.0-flash")
 
 # Gradio server port (override with env GRADIO_SERVER_PORT)
 GRADIO_SERVER_PORT = int(os.environ.get("GRADIO_SERVER_PORT", "7860"))
