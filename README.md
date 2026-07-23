@@ -39,6 +39,23 @@ extract_clauses ──▶ rule_check ──▶ llm_check ──▶ build_report
 
 Built with **LangGraph** ([`contract_agent.py`](contract_agent.py)); falls back to an equivalent linear run if LangGraph isn't installed. Every finding is validated against a **Pydantic schema** ([`contract_schema.py`](contract_schema.py)), so the report is always well-formed.
 
+## Design: graceful degradation
+
+A contract reviewer that fails closed is worse than useless — if the LLM is down, the user needs a report, not an error page. So the LLM is an **enhancement layer, never a dependency**. Every failure mode degrades to a complete, citation-backed report:
+
+| Failure | Behavior |
+|---|---|
+| No API key | Rule engine runs fully offline; report is complete |
+| Invalid key | Sidebar says so explicitly; falls back to rules |
+| LLM quota / rate limit (429) | Retries on an alternate model (quota is metered per model), then falls back to rules with a plain-English notice |
+| LLM returns malformed JSON | Findings are validated **item-by-item** — one bad item is dropped, the rest are kept |
+| LLM unreachable or errors | Reason surfaced in the UI; rule report still rendered |
+| LangGraph not installed | Agent runs the same nodes in an equivalent linear pipeline |
+
+The corollary is that **the deterministic layer carries the guarantees**: it's the part that's reproducibly evaluated (100% precision, 0% false positives on hard negatives), runs with no network, and never returns an uncited finding. The LLM adds recall on non-standard wording — the [CUAD results](#real-world-recall--cuad-510-real-contracts) quantify exactly how much headroom that is.
+
+The UI always states which engine produced the report (`rule` vs `llm+rule`), so a degraded run is never silently passed off as a full one.
+
 ## Detected risk categories
 
 Auto-renewal · Unlimited liability · Indemnification · Unilateral termination · IP assignment · Non-compete · Payment terms · Governing law / venue · Confidentiality · Warranty disclaimer
