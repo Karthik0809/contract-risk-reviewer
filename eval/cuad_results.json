@@ -3,11 +3,11 @@
   "split": "full",
   "engine": "rule",
   "n_contracts": 510,
-  "overall_recall_scorable": 0.269,
+  "overall_recall_scorable": 0.367,
   "scorable_gold_clauses": 1150,
   "per_category": {
     "Auto-renewal": {
-      "recall": 0.375,
+      "recall": 0.494,
       "gold": 176,
       "match_quality": "good"
     },
@@ -17,22 +17,22 @@
       "match_quality": "partial (we only flag exclusive venue)"
     },
     "IP assignment": {
-      "recall": 0.274,
+      "recall": 0.581,
       "gold": 124,
       "match_quality": "excellent"
     },
     "Non-compete": {
-      "recall": 0.42,
+      "recall": 0.597,
       "gold": 119,
       "match_quality": "good"
     },
     "Unilateral termination": {
-      "recall": 0.306,
+      "recall": 0.426,
       "gold": 183,
       "match_quality": "excellent"
     },
     "Unlimited liability": {
-      "recall": 0.0,
+      "recall": 0.099,
       "gold": 111,
       "match_quality": "excellent"
     }
