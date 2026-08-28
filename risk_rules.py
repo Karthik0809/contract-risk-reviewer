@@ -59,6 +59,11 @@ _RULES: List[RiskRule] = [
             r"evergreen",
             r"renew(?:s|ed|al)?\s+for\s+(?:successive|additional|further)\s+(?:period|term)",
             r"unless\s+(?:either\s+party|you|the\s+client)\s+(?:provides?|gives?)\s+(?:written\s+)?notice",
+            # Real contracts phrase the rollover as "successive/additional terms" and
+            # gate it behind a non-renewal notice window; both imply an evergreen term.
+            r"(?:shall|will)\s+(?:be\s+)?(?:automatically\s+)?renew\w*",
+            r"unless[^.]{0,80}?(?:non-?renew\w*|not\s+to\s+renew)[^.]{0,60}?(?:days|months)",
+            r"successive\s+(?:one|two|1|2)?\s*[\-\w]*\s*(?:year|month)\s+(?:period|term)",
         ],
     ),
     RiskRule(
@@ -73,6 +78,12 @@ _RULES: List[RiskRule] = [
             r"without\s+(?:any\s+)?limit\w*\s+(?:of|on|to)\s+liab\w*",
             r"no\s+(?:cap|limit\w*)\s+on\s+[\w'’\s]{0,25}?liab\w*",
             r"liable\s+for\s+all\s+(?:damages|losses)",
+            # Carve-outs FROM a liability cap: the cap exists but is disapplied for
+            # certain claims, so exposure for those claims is uncapped. This is how
+            # real contracts express uncapped liability -- they rarely say "unlimited".
+            r"(?:foregoing|preceding|this|such)\s+(?:limitation|exclusion|cap)[^.]{0,60}?(?:shall|will)\s+not\s+(?:apply|limit)",
+            r"(?:shall|will)\s+not\s+(?:exclude|limit)\s+(?:or\s+(?:exclude|limit)\s+)?[^.]{0,40}?liab",
+            r"limitations?\s+(?:of|on)\s+liab[^.]{0,60}?(?:shall|will|do(?:es)?)\s+not\s+apply",
         ],
     ),
     RiskRule(
@@ -97,6 +108,15 @@ _RULES: List[RiskRule] = [
             r"terminate\s+(?:this\s+agreement\s+)?(?:at\s+any\s+time|for\s+convenience|without\s+cause)",
             r"(?:sole|its)\s+discretion[\w\s,]{0,25}?terminate",
             r"terminate\s+(?:this\s+agreement\s+)?immediately\s+without\s+notice",
+            # Convenience termination is worded many ways; these are the variants that
+            # appear in real contracts without firing on ordinary for-cause termination.
+            r"terminat\w+[^.]{0,30}?for\s+(?:its\s+)?convenience",
+            r"for\s+any\s+reason\s+or\s+no\s+reason",
+            r"with\s+or\s+without\s+cause",
+            r"terminable\s+at\s+will|terminate[^.]{0,20}?\bat\s+will\b",
+            # NOTE: a bare "may terminate ... upon N days notice" is deliberately NOT
+            # matched -- a notice period says nothing about whether termination is for
+            # convenience, so it fires on ordinary mutual for-cause clauses.
         ],
     ),
     RiskRule(
@@ -109,6 +129,12 @@ _RULES: List[RiskRule] = [
             r"assign\w*\s+all\s+(?:right|title|interest)",
             r"work\s+(?:made\s+)?for\s+hire",
             r"all\s+intellectual\s+property\b[\w\s,]{0,45}?(?:owned|assigned|assign\w*|vest)",
+            # "hereby assigns" is the operative present-tense assignment language.
+            # Deliberately NOT matching a bare "all right, title and interest" -- that
+            # phrase appears in ordinary grant/licence clauses and is too noisy.
+            r"hereby\s+assign\w*",
+            r"sole\s+and\s+exclusive\s+propert\w+",
+            r"(?:shall|will)\s+vest\s+(?:solely\s+)?in\b",
         ],
     ),
     RiskRule(
@@ -121,6 +147,10 @@ _RULES: List[RiskRule] = [
             r"non[-\s]?compet\w*",
             r"shall\s+not\s+(?:directly\s+or\s+indirectly\s+)?(?:engage|compete|solicit)",
             r"exclusiv\w*\s+(?:to|with|arrangement)",
+            r"non-?competition",
+            r"(?:shall|will|agrees?)\s+not[^.]{0,40}?compet\w+",
+            r"directly\s+or\s+indirectly[^.]{0,60}?compet\w+",
+            r"not[^.]{0,30}?engage\s+in[^.]{0,40}?(?:business|activit)",
         ],
     ),
     RiskRule(
