@@ -115,10 +115,20 @@ def evaluate(split: str = "test", limit: int | None = None, use_llm: bool = Fals
 
     per_cat = {c: {"tp": 0, "gold": 0} for c in SCORABLE_OURS}
 
+    # Track whether the LLM pass actually ran. Without this the harness happily
+    # labels a run "llm+rule" even when every call 429s and silently falls back to
+    # rules -- which produces rules-only numbers wearing an LLM label.
+    llm_attempted = 0
+    llm_failed = 0
+
     for i, title in enumerate(titles, start=1):
         text = contexts[title]
         gold_ours = {CUAD_TO_OURS[c] for c in present.get(title, set()) if c in CUAD_TO_OURS}
         report = review_contract(text, contract_name=title, generator=generator)
+        if generator is not None:
+            llm_attempted += 1
+            if getattr(report, "llm_error", None):
+                llm_failed += 1
         predicted = {f.category for f in report.findings}
         for c in SCORABLE_OURS:
             if c in gold_ours:
@@ -132,10 +142,23 @@ def evaluate(split: str = "test", limit: int | None = None, use_llm: bool = Fals
     total_gold = sum(v["gold"] for v in per_cat.values())
     overall_recall = total_tp / total_gold if total_gold else 0.0
 
+    # Label the engine by what actually ran, not by what was requested.
+    llm_ok = llm_attempted - llm_failed
+    if generator is None:
+        engine = "rule"
+    elif llm_ok == 0:
+        engine = "rule (LLM requested but every call failed)"
+    elif llm_failed:
+        engine = f"llm+rule (degraded: {llm_failed}/{llm_attempted} LLM calls failed)"
+    else:
+        engine = "llm+rule"
+
     return {
         "dataset": "CUAD v1 (The Atticus Project, CC BY 4.0)",
         "split": split,
-        "engine": "llm+rule" if generator else "rule",
+        "engine": engine,
+        "llm_attempted": llm_attempted,
+        "llm_failed": llm_failed,
         "n_contracts": len(titles),
         "overall_recall_scorable": round(overall_recall, 3),
         "scorable_gold_clauses": total_gold,
@@ -166,6 +189,13 @@ def main() -> None:
     print("\n=== Contract Risk Reviewer — CUAD real-world evaluation ===")
     print(f"Dataset:   {results['dataset']}")
     print(f"Split:     {results['split']}  |  contracts: {results['n_contracts']}  |  engine: {results['engine']}")
+    if results.get("llm_failed"):
+        print(
+            f"\n!! WARNING: {results['llm_failed']} of {results['llm_attempted']} LLM calls failed "
+            f"(commonly free-tier 429 quota).\n"
+            f"!! Those contracts were scored by the rule engine alone, so the numbers below\n"
+            f"!! UNDERSTATE the LLM pass. Do not report this as a clean llm+rule result."
+        )
     print(f"\nOverall recall (scorable categories): {results['overall_recall_scorable']:.1%}  "
           f"(n={results['scorable_gold_clauses']} labeled clauses)")
     print("\nPer-category recall on real contracts:")

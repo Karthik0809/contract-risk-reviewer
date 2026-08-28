@@ -128,7 +128,23 @@ _LLM_SYSTEM = (
     '}\n\n'
     "Rules: the 'quote' MUST be copied verbatim from the contract (used as a citation). "
     "Do not invent clauses. If the contract is clean, return an empty findings list.\n"
-    "Preferred categories: " + ", ".join(CATEGORIES) + "."
+    "Preferred categories: " + ", ".join(CATEGORIES) + ".\n\n"
+    "Category guidance — these three are routinely mis-scoped, so apply them exactly:\n"
+    "- 'Unlimited liability': do NOT look for the literal words 'unlimited liability'; real\n"
+    "  contracts almost never use them. The usual form is a CARVE-OUT FROM a liability cap:\n"
+    "  the agreement caps liability, then disapplies that cap for certain claims, leaving\n"
+    "  uncapped exposure for them. Flag wording such as 'nothing in this Agreement shall\n"
+    "  exclude or limit liability for ...', 'the foregoing limitation shall not apply to ...',\n"
+    "  'such limitation shall not apply to the extent ...', or a liability section that\n"
+    "  excepts indemnities, confidentiality breach, fraud, gross negligence, wilful\n"
+    "  misconduct, or death/personal injury from the cap. Quote the carve-out itself.\n"
+    "- 'Governing law / venue': a plain governing-law clause ('governed by the laws of X')\n"
+    "  is standard and must NOT be flagged. Flag only an EXCLUSIVE venue or jurisdiction\n"
+    "  clause, which forecloses the reviewer's options.\n"
+    "- 'Unilateral termination': flag termination for convenience, at-will termination, or\n"
+    "  a right granted to only one party. An ordinary MUTUAL termination-for-cause clause\n"
+    "  ('either party may terminate for uncured material breach on 30 days notice') is\n"
+    "  standard and must NOT be flagged, regardless of the notice period."
 )
 
 
