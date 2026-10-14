@@ -3,7 +3,7 @@
 # The heavy retrieval/Gradio stack (torch, transformers, faiss, gradio, llama-index,
 # …) lives in requirements-full.txt and is NOT needed to run the reviewer.
 
-streamlit>=1.36.0          # web UI
+streamlit>=1.54.0          # web UI
 pydantic>=2.5.0            # typed risk report / structured extraction
 langgraph>=0.2.0           # agent orchestration (extract -> check -> report)
 pypdf>=3.15.0              # PDF text extraction
