@@ -78,7 +78,7 @@ class GeminiGenerator:
         # Prioritize stable flash/pro candidates if preferred is unavailable.
         priority_keywords = [
             "gemini-2.5-flash",
-            "gemini-2.0-flash",
+            "gemini-3.6-flash",
             "gemini-1.5-flash",
             "flash",
             "gemini-1.5-pro",
