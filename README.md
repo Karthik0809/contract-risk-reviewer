@@ -22,6 +22,22 @@ The output is a *risk report, not a chatbot answer*. It's aimed at the people wh
 
 ![Contract Risk Reviewer — risk report with severity, citations, and side-by-side redline](assets/demo.png)
 
+## Research: does the reviewer actually read the clause it flags?
+
+[`eval/research/PAPER.md`](eval/research/PAPER.md) evaluates LLM contract review on the CUAD test split (102 real contracts, expert labels) with a local model (`qwen3:8b`), scoring both contract-level detection and **grounded recall**, which only counts a detection when the passage the model cites overlaps the expert-labeled clause.
+
+| System | Precision | Recall | F1 | Grounded recall |
+|---|---|---|---|---|
+| Rules (precision-first) | 0.80 | 0.38 | 0.515 | — |
+| Single-prompt LLM, first 18K chars | 0.77 | 0.64 | 0.702 | 34.5% |
+| Retrieval-targeted LLM (whole contract) | 0.64 | 0.60 | 0.623 | 46.7% |
+| Rules ∪ single-prompt LLM | 0.73 | 0.75 | 0.742 | — |
+| Rules ∪ retrieval-targeted LLM | 0.65 | 0.74 | 0.689 | — |
+
+* 51.8% of labeled risk clauses lie beyond the 18K-character window a single prompt reads, yet that design still "finds" about half of them, which is consistent with guessing from priors.
+* The single-prompt LLM wins on contract-level F1, but retrieval-targeted verification cites the right passage far more often (grounded recall 46.7% vs. 34.5%).
+* Retrieval finds the labeled clause in its top 3 about 88% of the time, so the LLM verifier is the bottleneck. Reproduce: `python eval/research_cuad.py --systems rules,llm_trunc,rt_llm,llm_trunc_ev,rt_llm_v2 && python eval/write_paper.py`.
+
 ## What it does
 
 1. **Ingest** a PDF/TXT contract.
@@ -89,19 +105,19 @@ Scoring only your own hand-written clauses is circular. So the reviewer is also 
 python eval/run_cuad_eval.py --split full   # downloads ~18 MB, runs offline after that
 ```
 
-Rule-engine baseline ([`eval/cuad_results.json`](eval/cuad_results.json)):
+Rule-engine results after the August 2026 rule rewrite ([`eval/cuad_results.json`](eval/cuad_results.json); the first version scored 26.9%):
 
 | Category | Recall | Gold clauses | CUAD match |
 |---|---|---|---|
-| Non-compete | 42% | 119 | good |
-| Auto-renewal | 38% | 176 | good |
-| Unilateral termination | 31% | 183 | excellent |
-| IP assignment | 27% | 124 | excellent |
+| Non-compete | 60% | 119 | good |
+| IP assignment | 58% | 124 | excellent |
+| Auto-renewal | 49% | 176 | good |
+| Unilateral termination | 43% | 183 | excellent |
 | Governing law / venue | 24% | 437 | partial (we only flag *exclusive* venue) |
-| Unlimited liability | 0% | 111 | excellent |
-| **Overall** | **26.9%** | **1,150** | — |
+| Unlimited liability | 10% | 111 | excellent |
+| **Overall** | **36.7%** | **1,150** | — |
 
-**This is the honest headline, not a flaw to hide.** The deterministic rules are precision-first — near-100% precision on curated clauses — so on real, diversely-worded paper they form a **high-precision / low-recall baseline**. That ~27% is exactly the gap the optional **LLM extraction pass exists to close**; run `--llm` to measure the lift on the same contracts. (Indemnification, payment terms, confidentiality, and warranty disclaimer have no faithful CUAD category, so they're reported but not scored.)
+**This is the honest headline, not a flaw to hide.** The deterministic rules are precision-first, so on real, diversely-worded paper they form a **high-precision / low-recall baseline**. Rewriting the patterns around real contract wording raised recall from 27% to 37% at unchanged precision; the rest is the gap the optional **LLM pass exists to close** (see the research study above). (Indemnification, payment terms, confidentiality, and warranty disclaimer have no faithful CUAD category, so they're reported but not scored.)
 
 ### Precision — curated set with hard negatives
 
